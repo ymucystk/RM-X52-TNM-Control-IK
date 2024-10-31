@@ -225,15 +225,15 @@ export default function Controller(props) {
         <span>TARGET</span>
         <div className="row mb-0">
           <div className="col-md-4"><label htmlFor="target_x_number" className="form-label"><span className="form-control-plaintext">target x</span></label></div>
-          <div className="col-md-8"><input type="number" className="form-control" id="target_x_number" value={target.x} onChange={set_target_x} step={0.002} min={-10} max={10}/></div>
+          <div className="col-md-8"><input type="number" className="form-control" id="target_x_number" value={target.x} onChange={set_target_x} step={0.001} min={-10} max={10}/></div>
         </div>
         <div className="row mb-0">
           <div className="col-md-4"><label htmlFor="target_y_number" className="form-label"><span className="form-control-plaintext">target y</span></label></div>
-          <div className="col-md-8"><input type="number" className="form-control" id="target_y_number" value={target.y} onChange={set_target_y} step={0.002} min={-10} max={10}/></div>
+          <div className="col-md-8"><input type="number" className="form-control" id="target_y_number" value={target.y} onChange={set_target_y} step={0.001} min={-10} max={10}/></div>
         </div>
         <div className="row mb-2">
           <div className="col-md-4"><label htmlFor="target_z_number" className="form-label"><span className="form-control-plaintext">target z</span></label></div>
-          <div className="col-md-8"><input type="number" className="form-control" id="target_z_number" value={target.z} onChange={set_target_z} step={0.002} min={-10} max={10}/></div>
+          <div className="col-md-8"><input type="number" className="form-control" id="target_z_number" value={target.z} onChange={set_target_z} step={0.001} min={-10} max={10}/></div>
         </div>
       </div>
     </>
