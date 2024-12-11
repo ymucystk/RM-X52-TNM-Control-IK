@@ -1,5 +1,6 @@
 "use client";
 import * as React from 'react'
+import * as THREE from 'three';
 import Controller from './controller.js'
 
 export default function Home() {
@@ -29,6 +30,12 @@ export default function Home() {
   const [p15_object,set_p15_object] = React.useState()
   const [p16_object,set_p16_object] = React.useState()
 
+  const [controller_object,set_controller_object] = React.useState(new THREE.Object3D())
+  const [trigger_on,set_trigger_on] = React.useState(false)
+  const [start_pos,set_start_pos] = React.useState(new THREE.Vector4())
+  const [save_target,set_save_target] = React.useState()
+  const [vr_mode,set_vr_mode] = React.useState(false)
+
   const [test_pos,set_test_pos] = React.useState({x:0,y:0,z:0})
 
   const [c_pos_x,set_c_pos_x] = React.useState(0)
@@ -52,6 +59,7 @@ export default function Home() {
   const [x_vec_base,set_x_vec_base] = React.useState()
   const [y_vec_base,set_y_vec_base] = React.useState()
   const [z_vec_base,set_z_vec_base] = React.useState()
+  const order = 'ZYX'
 
   const joint_pos = [{
     base:{x:0,y:0,z:0},
@@ -78,6 +86,40 @@ export default function Home() {
     }, 10);
     return function(){clearInterval(intervalId)};
   }, [now]);
+
+  React.useEffect(() => {
+    if(rendered && vr_mode && trigger_on){
+      const move_pos = pos_sub(start_pos,controller_object.position)
+      let target_pos
+      if(save_target === undefined){
+        set_save_target(target)
+        target_pos = pos_sub(target,move_pos)
+      }else{
+        target_pos = pos_sub(save_target,move_pos)
+      }
+      set_target(getpos(target_pos))
+    }
+  },[controller_object.position.x,controller_object.position.y,controller_object.position.z])
+
+  React.useEffect(() => {
+    if(rendered && vr_mode && !trigger_on){
+      const wk_mtx = new THREE.Matrix4().makeRotationFromEuler(controller_object.rotation)
+      .multiply(
+        new THREE.Matrix4().makeRotationFromEuler(
+          new THREE.Euler(
+            (0.6654549523360951*-1),  //x
+            toRadian(0),  //y
+            toRadian(0),  //z
+            controller_object.rotation.order
+          )
+        )
+      )
+      const wk_euler = new THREE.Euler().setFromRotationMatrix(wk_mtx,controller_object.rotation.order)
+      set_wrist_rot_x(round(toAngle(wk_euler.x)*-1))
+      //set_wrist_rot_y(round(toAngle(wk_euler.y)))
+      //set_wrist_rot_z(round(toAngle(wk_euler.z)))
+    }
+  },[controller_object.rotation.x,controller_object.rotation.y,controller_object.rotation.z])
 
   React.useEffect(() => {
     if(rendered){
@@ -458,6 +500,36 @@ export default function Home() {
             }
           }
         });
+        AFRAME.registerComponent('vr-controller-right', {
+          schema: {type: 'string', default: ''},
+          init: function () {
+            set_controller_object(this.el.object3D)
+            this.el.object3D.rotation.order = order
+            this.el.addEventListener('triggerdown', (evt)=>{
+              const wk_start_pos = new THREE.Vector4(0,0,0,1).applyMatrix4(this.el.object3D.matrix)
+              set_start_pos(wk_start_pos)
+              set_trigger_on(true)
+            });
+            this.el.addEventListener('triggerup', (evt)=>{
+              set_save_target(undefined)
+              set_trigger_on(false)
+            });
+          }
+        });
+        AFRAME.registerComponent('scene', {
+          schema: {type: 'string', default: ''},
+          init: function () {
+            this.el.addEventListener('enter-vr', ()=>{
+              set_vr_mode(true)
+              console.log('enter-vr')
+              set_target({x:target.x,y:target.y,z:target.z*-1})
+            });
+            this.el.addEventListener('exit-vr', ()=>{
+              set_vr_mode(false)
+              console.log('exit-vr')
+            });
+          }
+        });
       }
     }
   }, [typeof window])
@@ -484,7 +556,8 @@ export default function Home() {
   if(rendered){
     return (
     <>
-      <a-scene>
+      <a-scene scene>
+        <a-entity oculus-touch-controls="hand: right" vr-controller-right visible={false}></a-entity>
         <a-plane position="0 0 0" rotation="-90 0 0" width="10" height="10" color="#7BC8A4"></a-plane>
         <Assets/>
         <Select_Robot {...robotProps}/>
