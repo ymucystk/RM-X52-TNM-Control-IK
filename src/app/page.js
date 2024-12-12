@@ -103,21 +103,7 @@ export default function Home() {
 
   React.useEffect(() => {
     if(rendered && vr_mode && !trigger_on){
-      const wk_mtx = new THREE.Matrix4().makeRotationFromEuler(controller_object.rotation)
-      .multiply(
-        new THREE.Matrix4().makeRotationFromEuler(
-          new THREE.Euler(
-            (0.6654549523360951*-1),  //x
-            toRadian(0),  //y
-            toRadian(0),  //z
-            controller_object.rotation.order
-          )
-        )
-      )
-      const wk_euler = new THREE.Euler().setFromRotationMatrix(wk_mtx,controller_object.rotation.order)
-      set_wrist_rot_x(round(toAngle(wk_euler.x)*-1))
-      //set_wrist_rot_y(round(toAngle(wk_euler.y)))
-      //set_wrist_rot_z(round(toAngle(wk_euler.z)))
+      set_wrist_rot_x(round(toAngle(controller_object.rotation.x - 0.6654549523360951))*-1)
     }
   },[controller_object.rotation.x,controller_object.rotation.y,controller_object.rotation.z])
 
