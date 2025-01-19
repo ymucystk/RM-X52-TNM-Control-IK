@@ -3,6 +3,11 @@ import * as React from 'react'
 import * as THREE from 'three';
 import Controller from './controller.js'
 
+import { connectMQTT, mqttclient, subscribeMQTT, publishMQTT } from './MQTT.js'
+
+const MQTT_CTRL_TOPIC = "om/vrgoogle";
+const MQTT_ROBOT_STATE_TOPIC = "om/state";
+
 export default function Home() {
   const [now, setNow] = React.useState(new Date())
   const [rendered,set_rendered] = React.useState(false)
@@ -31,7 +36,13 @@ export default function Home() {
   const [p16_object,set_p16_object] = React.useState()
 
   const [controller_object,set_controller_object] = React.useState(new THREE.Object3D())
+  const [controller_xdeg,set_controller_xdeg] = React.useState(0.0)
+  const [save_rot,set_save_rot] = React.useState(-1)
+  
   const [trigger_on,set_trigger_on] = React.useState(false)
+  const [grip_on,set_grip_on] = React.useState(false)
+  const [button_a_on,set_button_a_on] = React.useState(false)
+  const [button_b_on,set_button_b_on] = React.useState(false)
   const [start_pos,set_start_pos] = React.useState(new THREE.Vector4())
   const [save_target,set_save_target] = React.useState()
   const [vr_mode,set_vr_mode] = React.useState(false)
@@ -80,6 +91,31 @@ export default function Home() {
   const [p15_16_len,set_p15_16_len] = React.useState(joint_pos[0].j7.z)
   const [j3_value,set_j3_value] = React.useState({s:0,k:0})
  
+  function minmax(v,min, max){
+    if (v < 0) v = 0;
+    if (v > max-min) v = max-min;
+    return Math.round(v+min);
+  }
+
+  function sendCurrentMQTT() {
+        if ((mqttclient != null) && vr_mode) {
+
+            const j1 = minmax((j1_rotate+180)/360*4096, 300,3800); // 300-3800
+            const j2 = minmax((j2_rotate+90)/360*4096,900,3100);
+            const j3 = minmax((j3_rotate+10)/360*4096,700,3025);
+            const j4 = minmax((j4_rotate+163)/360*4096,850,2634);
+            const tool = minmax((j7_rotate)/25*(2634-1270),1270,2634); // とりあえず
+
+            const msg = JSON.stringify({
+                rotate: [j1,j2,j3,j4,tool]
+            });
+            let ret = publishMQTT(MQTT_CTRL_TOPIC, msg)
+        } else {
+            //console.log("client null")
+        }
+    }
+
+
   React.useEffect(function() {
     const intervalId = setInterval(function() {
       setNow(new Date());
@@ -89,6 +125,7 @@ export default function Home() {
 
   React.useEffect(() => {
     if(rendered && vr_mode && trigger_on){
+      // 本来であれば、差分だけでやりたい。
       const move_pos = pos_sub(start_pos,controller_object.position)
       let target_pos
       if(save_target === undefined){
@@ -102,8 +139,10 @@ export default function Home() {
   },[controller_object.position.x,controller_object.position.y,controller_object.position.z])
 
   React.useEffect(() => {
-    if(rendered && vr_mode && !trigger_on){
-      set_wrist_rot_x(round(toAngle(controller_object.rotation.x - 0.6654549523360951))*-1)
+    // ここで同時に動かすようにしている。
+    if(rendered && vr_mode && trigger_on){
+      publishMQTT("om/log","["+wrist_rot_x+","+save_rot+"]")
+      set_wrist_rot_x(save_rot-round(toAngle(controller_object.rotation.x -controller_xdeg)))
     }
   },[controller_object.rotation.x,controller_object.rotation.y,controller_object.rotation.z])
 
@@ -170,6 +209,11 @@ export default function Home() {
       j6_object.quaternion.setFromAxisAngle(z_vec_base,toRadian(j6_rotate))
     }
   }, [j6_rotate])
+
+  React.useEffect(()=>{
+    sendCurrentMQTT();
+  },[j1_rotate,j2_rotate,j3_rotate,j4_rotate,j7_rotate])
+
 
     const get_j5_quaternion = (rot_x=wrist_rot_x,rot_y=j1_rotate,rot_z=wrist_rot_z)=>{
       return new THREE.Quaternion().multiply(
@@ -490,17 +534,67 @@ export default function Home() {
           schema: {type: 'string', default: ''},
           init: function () {
             set_controller_object(this.el.object3D)
+            this.el.abutton = false;
+            this.el.bbutton = false;
+            
             this.el.object3D.rotation.order = order
             this.el.addEventListener('triggerdown', (evt)=>{
               const wk_start_pos = new THREE.Vector4(0,0,0,1).applyMatrix4(this.el.object3D.matrix)
               set_start_pos(wk_start_pos)
+              publishMQTT("om/log","{\"trigger_down\":["+wrist_rot_x+","+this.el.object3D.rotation.x+"]}")
+
+              // ここで、角度の差分ベースの値を保存する
+              set_controller_xdeg(this.el.object3D.rotation.x+0.35) // 基礎的な前向き設定
+//              set_save_rot(wrist_rot_x)
               set_trigger_on(true)
             });
             this.el.addEventListener('triggerup', (evt)=>{
               set_save_target(undefined)
+              set_save_rot(wrist_rot_x)
+//              set_save_rot(-1)
               set_trigger_on(false)
             });
-          }
+            this.el.addEventListener('gripdown', (evt)=>{
+
+              set_grip_on(true);
+
+            });
+            this.el.addEventListener('gripup', (evt)=>{
+
+              set_grip_on(false);
+
+            });
+            this.el.addEventListener('abuttondown', (event) => {
+              set_button_a_on(true);
+              this.el.abutton=true;
+
+            });
+            this.el.addEventListener('abuttonup', (event) => {
+              set_button_a_on(false);
+              this.el.abutton=false;
+            });
+            this.el.addEventListener('bbuttondown', (event)=> {
+              set_button_b_on(true);
+              this.el.bbutton=true;
+            });
+            this.el.addEventListener('bbuttonup', (event) => {
+              this.el.bbutton=false;
+              set_button_b_on(false);
+            });
+          },
+          tick: function(time, deltaTime){
+            if (this.el.abutton== true){
+              // この間だけ j7_rotate を減らす
+              set_j7_rotate((j7)=> (j7>1)?j7-1:0)
+              publishMQTT("om/log","tick"+j7_rotate+","+deltaTime)
+
+            }
+            if (this.el.bbutton == true){
+              // この間だけ j7_rotate を増やす
+              set_j7_rotate((j7)=> (j7<25)?j7+1:25)
+              publishMQTT("om/log","tick"+j7_rotate+","+deltaTime)
+            }
+          }          
         });
         AFRAME.registerComponent('scene', {
           schema: {type: 'string', default: ''},
@@ -509,6 +603,11 @@ export default function Home() {
               set_vr_mode(true)
               console.log('enter-vr')
               set_target({x:target.x,y:target.y,z:target.z*-1})
+              // VR モードに入ったときの自分の位置も指定すべき！
+              set_c_pos_y(-0.6);
+              set_c_pos_x(0.0);
+              set_c_pos_z(0.8);
+
             });
             this.el.addEventListener('exit-vr', ()=>{
               set_vr_mode(false)
@@ -516,6 +615,73 @@ export default function Home() {
             });
           }
         });
+
+        // MQTT 関係
+        
+        if (typeof window.mqttClient === 'undefined') {
+                    //サブスクライブするトピックの登録
+                    window.mqttClient = connectMQTT();
+        
+                    subscribeMQTT([
+                        MQTT_ROBOT_STATE_TOPIC,
+                        'robothand_control/current',
+                        'robothand_control/show_request',
+                        'robothand_control/request'
+                    ]);
+        
+                    //サブスクライブ時の処理
+                    window.mqttClient.on('message', (topic, message) => {
+                        if (topic == MQTT_ROBOT_STATE_TOPIC) {
+                            if (publish == false) {
+                                let data = JSON.parse(message.toString())
+                                //console.log("Receive_State", data)
+                                const dt = q2joint(data)
+                                //                        console.log("Joints", dt)
+                                set_rotate(dt)
+                                let wkend = forward_kinematic(dt)
+                                set_nodes_pos(wkend)
+                                //console.log("nodes:", wkend)
+                                let wkqua = cal_end_qua(dt)
+                                set_end_quaternion(wkqua)
+                                receive_state = true;
+                                //    publish = true
+                            }
+        
+                            //                    set_real_rotate(data)
+                        } else if (topic == "robothand_control/show_request") {
+                            //webからrequestボタンの表示
+                            let data = JSON.parse(message.toString())
+                            console.log(data)
+                            let request_button = document.querySelector('#request_box');
+                            set_VR_number(pre => {
+                                VRNo = pre
+                                if (data.ID == VRNo) {
+                                    request_button.setAttribute('visible', true)
+                                }
+                                ; return pre
+                            })
+                        } else if (topic == "robothand_control/current") {
+                            const data = JSON.parse(message.toString())
+                            set_current_topic_ID(data.ID)
+                            topicNo = data.ID
+                        } else if (topic == "robothand_control/request") {
+                            let data = JSON.parse(message.toString())
+                            set_VR_number(pre => { VRNo = pre; return pre })
+                            set_current_topic_ID(pre => { topicNo = pre; return pre })
+                            //set内でset呼び出せるの？
+                            if (topicNo == VRNo) {
+                                const data = JSON.parse(message.toString())
+                                set_request_No(data.ID)
+                                //アクセプトボタン群の表示
+                                let response = document.querySelector('#response');
+                                response.setAttribute('visible', true)
+                            }
+                        }
+        
+                    })
+        
+        
+                }
       }
     }
   }, [typeof window])
@@ -542,9 +708,9 @@ export default function Home() {
   if(rendered){
     return (
     <>
-      <a-scene scene>
+      <a-scene scene xr-mode-ui="XRMode: ar">
         <a-entity oculus-touch-controls="hand: right" vr-controller-right visible={false}></a-entity>
-        <a-plane position="0 0 0" rotation="-90 0 0" width="10" height="10" color="#7BC8A4"></a-plane>
+        <a-plane position="0 0 0" rotation="-90 0 0" width="0.4" height="0.4" color="#7BC8A4" opacity="0.5"></a-plane>
         <Assets/>
         <Select_Robot {...robotProps}/>
         <a-entity light="type: directional; color: #EEE; intensity: 0.7" position="1 1 1"></a-entity>
