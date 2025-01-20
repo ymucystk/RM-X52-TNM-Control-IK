@@ -40,7 +40,7 @@ export default function Home() {
   const [p16_object, set_p16_object] = React.useState()
 
   const [controller_object, set_controller_object] = React.useState(new THREE.Object3D())
-  const [controller_xdeg, set_controller_xdeg] = React.useState(0.0)
+  const [controller_xdeg, set_controller_xdeg] = React.useState({xdeg:0,crot:0})
   const [save_rot, set_save_rot] = React.useState(-1)
 
   const [trigger_on, set_trigger_on] = React.useState(false)
@@ -143,12 +143,18 @@ export default function Home() {
   }, [controller_object.position.x, controller_object.position.y, controller_object.position.z])
 
   React.useEffect(() => {
-    // ここで同時に動かすようにしている。
+    // ここで手首を動かすようにしている。
     if (rendered && vr_mode && trigger_on) {
-      publishMQTT("om/log", "[" + wrist_rot_x + "," + save_rot + "]")
-      set_wrist_rot_x(save_rot - round(toAngle(controller_object.rotation.x - controller_xdeg)))
+      set_wrist_rot_x((cur_rot)=>
+          {
+            if (controller_xdeg.crot == -999){
+              controller_xdeg.crot = cur_rot; // 最初の wrist_rot_x
+            }
+            return controller_xdeg.crot- round(toAngle(controller_object.rotation.x - controller_xdeg.xdeg))
+          }
+        )
     }
-  }, [controller_object.rotation.x, controller_object.rotation.y, controller_object.rotation.z])
+  }, [controller_object.rotation.x])
 
   React.useEffect(() => {
     if (rendered) {
@@ -577,17 +583,14 @@ export default function Home() {
             this.el.addEventListener('triggerdown', (evt) => {
               const wk_start_pos = new THREE.Vector4(0, 0, 0, 1).applyMatrix4(this.el.object3D.matrix)
               set_start_pos(wk_start_pos)
-              publishMQTT("om/log", "{\"trigger_down\":[" + wrist_rot_x + "," + this.el.object3D.rotation.x + "]}")
+//              publishMQTT("om/log", "{\"trigger_down\":[" + wrist_rot_x + "," + this.el.object3D.rotation.x + "]}")
 
               // ここで、角度の差分ベースの値を保存する
-              set_controller_xdeg(this.el.object3D.rotation.x + 0.35) // 基礎的な前向き設定
-              //              set_save_rot(wrist_rot_x)
+              set_controller_xdeg({xdeg:this.el.object3D.rotation.x,crot:-999}) // 基礎的な前向き設定
               set_trigger_on(true)
             });
             this.el.addEventListener('triggerup', (evt) => {
               set_save_target(undefined)
-              set_save_rot(wrist_rot_x)
-              //              set_save_rot(-1)
               set_trigger_on(false)
             });
             this.el.addEventListener('gripdown', (evt) => {
