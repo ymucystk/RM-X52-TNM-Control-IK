@@ -29,6 +29,8 @@ export default function Home() {
   const [j6_rotate, set_j6_rotate] = React.useState(0)
   const [j7_rotate, set_j7_rotate] = React.useState(0) //指用
 
+  const [rotate, set_rotate] = React.useState([])
+
   const [j1_object, set_j1_object] = React.useState()
   const [j2_object, set_j2_object] = React.useState()
   const [j3_object, set_j3_object] = React.useState()
@@ -101,14 +103,14 @@ export default function Home() {
     return Math.round(v + min);
   }
 
-  function sendCurrentMQTT() {
+  function sendCurrentMQTT(rt) {
     if ((mqttclient != null) && publish) {
 
-      const j1 = minmax((j1_rotate + 180) / 360 * 4096, 300, 3800); // 300-3800
-      const j2 = minmax((j2_rotate + 90) / 360 * 4096, 900, 3100);
-      const j3 = minmax((j3_rotate + 10) / 360 * 4096, 700, 3025);
-      const j4 = minmax((j4_rotate + 163) / 360 * 4096, 850, 2634);
-      const tool = minmax((j7_rotate) / 25 * (2634 - 1270), 1270, 2634); // とりあえず
+      const j1 = minmax((rt[0] + 180) / 360 * 4096, 300, 3800); // 300-3800
+      const j2 = minmax((rt[1] + 90) / 360 * 4096, 900, 3100);
+      const j3 = minmax((rt[2] + 10) / 360 * 4096, 700, 3025);
+      const j4 = minmax((rt[3]+ 163) / 360 * 4096, 850, 2634);
+      const tool = minmax((rt[4]) / 25 * (2634 - 1270), 1270, 2634); // とりあえず
 
       const msg = JSON.stringify({
         rotate: [j1, j2, j3, j4, tool]
@@ -220,7 +222,13 @@ export default function Home() {
     }
   }, [j6_rotate])
 
-// これだと、変化が多すぎてダメ（レンダリングより多い）
+  React.useEffect(() => {
+    set_rotate([j1_rotate,j2_rotate,j3_rotate,j4_rotate,j7_rotate])
+  }, [j7_rotate])
+
+
+// これだと、変化が多
+// すぎてダメ（レンダリングより多い）
 //  React.useEffect(() => {
 //    sendCurrentMQTT();
 //  }, [j1_rotate, j2_rotate, j3_rotate, j4_rotate, j7_rotate])
@@ -394,6 +402,7 @@ export default function Home() {
       set_j2_rotate(wk_j2_rotate)
       set_j3_rotate(wk_j3_rotate)
       set_j4_rotate(wk_j4_rotate)
+      set_rotate([wk_j1_rotate,wk_j2_rotate,wk_j3_rotate,wk_j4_rotate,j7_rotate])
     }
     set_dsp_message(dsp_message)
   }
@@ -633,8 +642,13 @@ export default function Home() {
               set_j7_rotate((j7) => (j7 < 25) ? j7 + 1 : 25)
               publishMQTT("om/log", "tick" + j7_rotate + "," + deltaTime)
             }
-            
-            sendCurrentMQTT();
+            let rt=[];
+            set_rotate((cur)=>{
+              if(cur.length>0){
+                sendCurrentMQTT(cur);
+              }
+              return cur;
+            })
           }
         });
         AFRAME.registerComponent('scene', {

@@ -4,7 +4,9 @@ import mqtt from 'mqtt'
 //const MQTT_BROKER_URL = "wss://sora.uclab.jp/mqws";
 //const MQTT_BROKER_URL = "wss://urdemo.uclab.jp/mqws";
 //const MQTT_BROKER_URL = "wss://urdemo.uclab.jp/mqws";
-const MQTT_BROKER_URL = "wss://sora2.uclab.jp/mqws";
+//const MQTT_BROKER_URL = "wss://sora2.uclab.jp/mqws";
+const MQTT_BROKER_URL = "wss://sora2.uclab.jp/mqws"; // ちゃんと URL じゃないと証明書がダメだからダメ！
+//const MQTT_BROKER_URL = "wss://192.168.207.22/mqws";
 
 // global private variable
 export var mqttclient = null;
