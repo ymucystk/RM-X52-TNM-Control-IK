@@ -12,6 +12,10 @@ export default function Controller(props) {
   const {tool_rotate} = props
   const {normalize180} = props
 
+  const normalize180_scope = (value,min,max)=>{
+    let result_value = props.normalize180(value)
+    return Math.max(Math.min(result_value,max),min)
+  }
   /*
   const set_toolName = (e)=>{
     props.set_toolName(e.target.value)
@@ -19,32 +23,29 @@ export default function Controller(props) {
 
   const set_j1_rotate = (e)=>{
     let value = Number.parseFloat(e.target.value || 0)
-    if(Math.abs(value)===180){
-      value = value * -1
-    }
-    props.set_j1_rotate(value)
+    props.set_j1_rotate(normalize180(value))
   }
 
   const set_j2_rotate = (e)=>{
     let value = Number.parseFloat(e.target.value || 0)
-    if(Math.abs(value)===180){
-      value = value * -1
-    }
-    props.set_j2_rotate(value)
+    props.set_j2_rotate(normalize180_scope(value,-100,95))
   }
 
   const set_j3_rotate = (e)=>{
     let value = Number.parseFloat(e.target.value || 0)
-    if(Math.abs(value)===180){
-      value = value * -1
-    }
-    props.set_j3_rotate(value)
+    props.set_j3_rotate(normalize180_scope(value,-25,178))
   }
 
   const set_j4_rotate = (e)=>{
     let value = Number.parseFloat(e.target.value || 0)
-    if(Math.abs(value)===180){
-      value = value * -1
+    value = normalize180(value)
+    if(value > 0){
+      if((35 < value)&&(value < 90)){
+        value = 35
+      }else
+      if((90 <= value)&&(value < 165)){
+        value = 165
+      }
     }
     props.set_j4_rotate(value)
   }
@@ -153,7 +154,7 @@ export default function Controller(props) {
         </div>
         <div className="row mb-0">
           <div className="col-md-4"><label htmlFor="j4_rotate_number" className="form-label"><span className="form-control-plaintext">J4 Deg</span></label></div>
-          <div className="col-md-8"><input type="number" className="form-control" id="j4_rotate_number" value={j4_rotate} onChange={set_j4_rotate} min={-180} max={180}/></div>
+          <div className="col-md-8"><input type="number" className="form-control" id="j4_rotate_number" value={j4_rotate} onChange={set_j4_rotate} min={-181} max={181}/></div>
         </div>
         {/*<div className="row mb-0">
           <div className="col-md-4"><label htmlFor="j5_rotate_number" className="form-label"><span className="form-control-plaintext">J5 Deg</span></label></div>

@@ -299,15 +299,46 @@ export default function Home() {
         dsp_message = result_t15.dsp_message
       }
 
+      let flg = true
       const wk_j1_rotate = target_direction
-      const wk_j2_rotate = normalize180(round(result_t15.j2_rotate - j3_value.k))
-      const wk_j3_rotate = normalize180(round(result_t15.j3_rotate + j3_value.k))
-      const wk_j4_rotate = normalize180(round((0 - (wk_j2_rotate + wk_j3_rotate)) + wrist_rot_x))
+      let wk_j2_rotate = normalize180(round(result_t15.j2_rotate - j3_value.k))
+      if((wk_j2_rotate < -100)||(wk_j2_rotate > 85)){
+        flg = false
+        wk_j2_rotate = Math.max(Math.min(wk_j2_rotate,85),-100)
+      }
+      let wk_j3_rotate = normalize180(round(result_t15.j3_rotate + j3_value.k))
+      if(Math.abs(wk_j3_rotate)>25){
+        if(wk_j3_rotate < 0){
+          if(wk_j3_rotate > -103){
+            wk_j3_rotate = -25
+          }else{
+            wk_j3_rotate = 178
+          }
+          flg = false
+        }else
+        if(wk_j3_rotate > 178){
+          flg = false
+          wk_j3_rotate = 178
+        }
+      }
+      let wk_j4_rotate = normalize180(round((0 - (wk_j2_rotate + wk_j3_rotate)) + wrist_rot_x))
+      if(wk_j4_rotate>0){
+        if((35 < wk_j4_rotate)&&(wk_j4_rotate < 90)){
+          flg = false
+          wk_j4_rotate = 35
+        }else
+        if((90 <= wk_j4_rotate)&&(wk_j4_rotate < 165)){
+          flg = false
+          wk_j4_rotate = 165
+        }
+      }
 
-      set_j1_rotate(wk_j1_rotate)
-      set_j2_rotate(wk_j2_rotate)
-      set_j3_rotate(wk_j3_rotate)
-      set_j4_rotate(wk_j4_rotate)
+      if(flg){
+        set_j1_rotate(wk_j1_rotate)
+        set_j2_rotate(wk_j2_rotate)
+        set_j3_rotate(wk_j3_rotate)
+        set_j4_rotate(wk_j4_rotate)
+      }
       set_dsp_message(dsp_message)
     }
 
