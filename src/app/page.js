@@ -102,18 +102,27 @@ export default function Home() {
     if (v > max - min) v = max - min;
     return Math.round(v + min);
   }
+  function to360(v,shift,min){
+    if (v < min) v+=360
+    v = (v+shift)%360
+    return v;
+  }
 
   function sendCurrentMQTT(rt) {
     if ((mqttclient != null) && publish) {
 
-      const j1 = minmax((rt[0] + 180) / 360 * 4096, 300, 3800); // 300-3800
-      const j2 = minmax((rt[1] + 90) / 360 * 4096, 900, 3100);
-      const j3 = minmax((rt[2] + 10) / 360 * 4096, 700, 3025);
-      const j4 = minmax((rt[3]+ 163) / 360 * 4096, 850, 2634);
-      const tool = minmax((rt[4]) / 25 * (2634 - 1270), 1270, 2634); // とりあえず
+      const j1 = minmax((to360(rt[0],0,0) ) / 360 * 4096, 300, 3800); // 300-3800
+      let j2 = minmax((to360(rt[1],90,-90) ) / 360 * 4096, 900, 3100);
+      if (rt[1]< -90) j2 = 900;
+      const j3 = minmax((to360(rt[2],90,0)) / 360 * 4096, 0, 3025);
+      let j4 = minmax((to360(rt[3],180,0)) / 360 * 4096, 850, 3400);
+      if (rt[3]>165)j4 = 850;
+      const tool = minmax((25-rt[4]) / 25 * (2634 - 1270), 1270, 2634); // とりあえず
 
       const msg = JSON.stringify({
-        rotate: [j1, j2, j3, j4, tool]
+        rotate: [j1, j2, j3, j4, tool],
+//        raw: [rt[1],to360(rt[1],90,-90)]
+        raw: [rt[3],to360(rt[3],180,0)]
       });
       let ret = publishMQTT(MQTT_CTRL_TOPIC, msg)
     } else {
@@ -587,6 +596,7 @@ export default function Home() {
             set_controller_object(this.el.object3D)
             this.el.abutton = false;
             this.el.bbutton = false;
+            this.el.lastsent = 0;
 
             this.el.object3D.rotation.order = order
             this.el.addEventListener('triggerdown', (evt) => {
@@ -631,24 +641,27 @@ export default function Home() {
             });
           },
           tick: function (time, deltaTime) {
+            
             if (this.el.abutton == true) {
               // この間だけ j7_rotate を減らす
               set_j7_rotate((j7) => (j7 > 1) ? j7 - 1 : 0)
-              publishMQTT("om/log", "tick" + j7_rotate + "," + deltaTime)
+              publishMQTT("om/log", "tick" + j7_rotate + ","+time+"," + deltaTime)
 
             }
             if (this.el.bbutton == true) {
               // この間だけ j7_rotate を増やす
               set_j7_rotate((j7) => (j7 < 25) ? j7 + 1 : 25)
-              publishMQTT("om/log", "tick" + j7_rotate + "," + deltaTime)
+              publishMQTT("om/log", "tick" + j7_rotate + ","+time+"," + deltaTime)
             }
-            let rt=[];
-            set_rotate((cur)=>{
-              if(cur.length>0){
-                sendCurrentMQTT(cur);
-              }
-              return cur;
-            })
+            if (time - this.el.lastsent > 200){
+              set_rotate((cur)=>{
+                if(cur.length>0){
+                  sendCurrentMQTT(cur);
+                }
+                return cur;
+              })
+              this.el.lastsent = time; 
+            }
           }
         });
         AFRAME.registerComponent('scene', {
