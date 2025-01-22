@@ -333,6 +333,28 @@ export default function Home() {
         }
       }
 
+      const base_m4 = new THREE.Matrix4().multiply(
+        new THREE.Matrix4().makeRotationY(toRadian(wk_j1_rotate)).setPosition(joint_pos[0].j1.x,joint_pos[0].j1.y,joint_pos[0].j1.z)
+      ).multiply(
+        new THREE.Matrix4().makeRotationX(toRadian(wk_j2_rotate)).setPosition(joint_pos[0].j2.x,joint_pos[0].j2.y,joint_pos[0].j2.z)
+      ).multiply(
+        new THREE.Matrix4().makeRotationX(toRadian(wk_j3_rotate)).setPosition(joint_pos[findindex].j3.x,joint_pos[findindex].j3.y,joint_pos[findindex].j3.z)
+      ).multiply(
+        new THREE.Matrix4().makeRotationX(toRadian(wk_j4_rotate)).setPosition(joint_pos[findindex].j4.x,joint_pos[findindex].j4.y,joint_pos[findindex].j4.z)
+      )
+      const j4_pos = new THREE.Vector4(0,0,0,1).applyMatrix4(base_m4)
+      if(j4_pos.y < 0.04){
+        flg = false
+      }
+
+      base_m4.multiply(
+        new THREE.Matrix4().setPosition(joint_pos[0].j7.x,joint_pos[0].j7.y,joint_pos[0].j7.z)
+      )
+      const j7_pos = new THREE.Vector4(0,0,0,1).applyMatrix4(base_m4)
+      if(j7_pos.y < 0.04){
+        flg = false
+      }
+
       if(flg){
         set_j1_rotate(wk_j1_rotate)
         set_j2_rotate(wk_j2_rotate)
