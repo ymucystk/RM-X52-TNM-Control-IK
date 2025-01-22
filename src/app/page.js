@@ -100,7 +100,6 @@ export default function Home() {
       const ans1 = calc_side_2(target_pos.x,target_pos.z)
       if(ans1.s < joint_pos[0].j7.z){
         const ans2 = calc_side_1(joint_pos[0].j7.z,ans1.k)
-        console.log(`ans2:{a:${ans2.a}, b:${ans2.b}}`)
         target_pos.x = ans2.b
         target_pos.z = ans2.a
       }
