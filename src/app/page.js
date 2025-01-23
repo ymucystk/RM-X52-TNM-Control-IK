@@ -167,7 +167,12 @@ export default function Home() {
             if (controller_xdeg.crot == -999){
               controller_xdeg.crot = cur_rot; // 最初の wrist_rot_x
             }
-            return controller_xdeg.crot- round(toAngle(controller_object.rotation.x - controller_xdeg.xdeg))
+            const m = new THREE.Quaternion().setFromEuler(
+              new THREE.Euler((controller_object.rotation.x - 0.6654549523360951)*-1,controller_object.rotation.y,controller_object.rotation.z)
+            )
+            const p = quaternionToRotation(m,{x:0,y:0,z:-1})
+            return round(toAngle(p.y))
+            //return controller_xdeg.crot- round(toAngle(controller_object.rotation.x - controller_xdeg.xdeg))
           }
         )
     }
