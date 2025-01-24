@@ -109,7 +109,12 @@ export default function Home() {
 
   React.useEffect(() => {
     if(rendered && vr_mode && !trigger_on){
-      set_wrist_rot_x(round(toAngle(controller_object.rotation.x - 0.6654549523360951))*-1)
+      const q = new THREE.Quaternion().setFromEuler(
+        new THREE.Euler((controller_object.rotation.x - 0.6654549523360951),controller_object.rotation.y,controller_object.rotation.z,'ZYX')
+      )
+      const p = quaternionToRotation(q,{x:0,y:0,z:-1})
+      const ans = direction_angle(p)
+      set_wrist_rot_x(round(ans.angle-90))
     }
   },[controller_object.rotation.x,controller_object.rotation.y,controller_object.rotation.z])
 
