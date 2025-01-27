@@ -89,7 +89,10 @@ export default function Home() {
 
   React.useEffect(() => {
     if(rendered && vr_mode && trigger_on){
-      const move_pos = pos_sub(start_pos,controller_object.position)
+      let move_pos = pos_sub(start_pos,controller_object.position)
+      move_pos.x = move_pos.x/2
+      move_pos.y = move_pos.y/2
+      move_pos.z = move_pos.z/2
       let target_pos
       if(save_target === undefined){
         set_save_target(target)
