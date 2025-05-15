@@ -4,7 +4,6 @@ import * as THREE from 'three';
 import Controller from './controller.js'
 
 export default function Home() {
-  const [now, setNow] = React.useState(new Date())
   const [rendered,set_rendered] = React.useState(false)
   const robotNameList = ["Normal","Long"]
   //const robotNameList = ["Normal"]
@@ -27,8 +26,8 @@ export default function Home() {
   const [j5_object,set_j5_object] = React.useState()
   const [j6_object,set_j6_object] = React.useState()
 
-  const [p15_object,set_p15_object] = React.useState()
-  const [p16_object,set_p16_object] = React.useState()
+  const [p15_object,set_p15_object] = React.useState(new THREE.Object3D())
+  const [p16_object,set_p16_object] = React.useState(new THREE.Object3D())
 
   const [controller_object,set_controller_object] = React.useState(new THREE.Object3D())
   const [trigger_on,set_trigger_on] = React.useState(false)
@@ -80,13 +79,6 @@ export default function Home() {
   const [p15_16_len,set_p15_16_len] = React.useState(joint_pos[0].j7.z)
   const [j3_value,set_j3_value] = React.useState({s:0,k:0})
  
-  React.useEffect(function() {
-    const intervalId = setInterval(function() {
-      setNow(new Date());
-    }, 10);
-    return function(){clearInterval(intervalId)};
-  }, [now]);
-
   React.useEffect(() => {
     if(rendered && vr_mode && trigger_on){
       let move_pos = pos_sub(start_pos,controller_object.position)
@@ -483,15 +475,11 @@ export default function Home() {
 
   React.useEffect(() => {
     if(rendered){
-      const box15_result = getposq(p15_object)
-      const p15_pos = getpos(box15_result.position)
-
-      const box16_result = getposq(p16_object)
-      const p16_pos = getpos(box16_result.position)
-
+      const p15_pos = new THREE.Vector3().applyMatrix4(p15_object.matrix)
+      const p16_pos = new THREE.Vector3().applyMatrix4(p16_object.matrix)
       set_p15_16_len(distance(p15_pos,p16_pos))
     }
-  },[now])
+  },[p16_object.matrix.elements[14]])
 
   React.useEffect(() => {
     if (typeof window !== "undefined") {
