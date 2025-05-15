@@ -12,8 +12,8 @@
   "dependencies": {
     "aframe": "^1.6.0",
     "bootstrap": "^5.3.3",
-    "next": "14.2.4",
-    "react": "^18",
-    "react-dom": "^18"
+    "next": "15.3.2",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
   }
 }

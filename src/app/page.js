@@ -610,7 +610,7 @@ export default function Home() {
     return (
     <>
       <a-scene scene>
-        <a-entity oculus-touch-controls="hand: right" vr-controller-right visible={false}></a-entity>
+        <a-entity oculus-touch-controls="hand: right" vr-controller-right visible={`${false}`}></a-entity>
         <a-plane position="0 0 0" rotation="-90 0 0" width="10" height="10" color="#7BC8A4"></a-plane>
         <Assets/>
         <Select_Robot {...robotProps}/>
@@ -619,8 +619,8 @@ export default function Home() {
         <a-entity id="rig" position={`${c_pos_x} ${c_pos_y} ${c_pos_z}`} rotation={`${c_deg_x} ${c_deg_y} ${c_deg_z}`}>
           <a-camera id="camera" cursor="rayOrigin: mouse;" position="0 0 0"></a-camera>
         </a-entity>
-        <a-sphere position={edit_pos(target)} scale="0.012 0.012 0.012" color="yellow" visible={true}></a-sphere>
-        <a-box position={edit_pos(test_pos)} scale="0.03 0.03 0.03" color="green" visible={box_vis}></a-box>
+        <a-sphere position={edit_pos(target)} scale="0.012 0.012 0.012" color="yellow" visible={`${true}`}></a-sphere>
+        <a-box position={edit_pos(test_pos)} scale="0.03 0.03 0.03" color="green" visible={`${box_vis}`}></a-box>
         <Line pos1={{x:1,y:0.0001,z:1}} pos2={{x:-1,y:0.0001,z:-1}} visible={cursor_vis} color="white"></Line>
         <Line pos1={{x:1,y:0.0001,z:-1}} pos2={{x:-1,y:0.0001,z:1}} visible={cursor_vis} color="white"></Line>
         <Line pos1={{x:1,y:0.0001,z:0}} pos2={{x:-1,y:0.0001,z:0}} visible={cursor_vis} color="white"></Line>
@@ -662,7 +662,7 @@ const Normal = (props)=>{
   const {visible, cursor_vis, edit_pos, joint_pos, robotNameList, robotName} = props
   const findindex = robotNameList.findIndex((e)=>e===robotName)
   return (<>{visible?
-    <a-entity robot-click="" gltf-model="#base" position={edit_pos(joint_pos[0].base)} visible={visible}>
+    <a-entity robot-click="" gltf-model="#base" position={edit_pos(joint_pos[0].base)} visible={`${visible}`}>
       <a-entity j_id="1" gltf-model="#j1" position={edit_pos(joint_pos[0].j1)}>
         <a-entity j_id="2" gltf-model={findindex===0?"#j2":"#j2l"} position={edit_pos(joint_pos[0].j2)}>
           <a-entity j_id="3" gltf-model={findindex===0?"#j3":"#j3l"} position={edit_pos(joint_pos[findindex].j3)}>
@@ -690,7 +690,7 @@ const Model_Tool = (props)=>{
       <a-entity j_id="4_1" gltf-model="#j4_1" position={edit_pos(j4_1_pos)} rotation={`0 0 0`}></a-entity>
       <a-entity j_id="4_2" gltf-model="#j4_2" position={edit_pos(j4_2_pos)} rotation={`0 0 0`}></a-entity>
       <Cursor3dp j_id="16" pos={joint_pos[0].j7} visible={cursor_vis}/>
-      <a-box color="yellow" scale="0.02 0.02 0.02" position={edit_pos(joint_pos[0].j7)} visible={box_vis}></a-box>
+      <a-box color="yellow" scale="0.02 0.02 0.02" position={edit_pos(joint_pos[0].j7)} visible={`${box_vis}`}></a-box>
     </>,
   ]
   const {toolNameList, toolName} = props
@@ -721,7 +721,7 @@ const Cursor3dp = (props) => {
       line__2={line_z}
       position={`${pos.x} ${pos.y} ${pos.z}`}
       rotation={`${rot.x} ${rot.y} ${rot.z}`}
-      visible={visible}
+      visible={`${visible}`}
   >{children}</a-entity>
 }
 
@@ -734,6 +734,6 @@ const Line = (props) => {
       {...otherprops}
       line={line_para}
       position={`0 0 0`}
-      visible={visible}
+      visible={`${visible}`}
   ></a-entity>
 }
